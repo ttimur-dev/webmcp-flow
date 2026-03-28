@@ -13,8 +13,8 @@ export interface NodeData extends Record<string, unknown> {
 declare global {
   interface Navigator {
     modelContext?: {
-      registerTool: (tool: object) => void;
-      unregisterTool: (name: string) => void;
+      registerTool: (tool: object, options?: { signal?: AbortSignal }) => void;
+      unregisterTool?: (name: string) => void;
     };
   }
 }

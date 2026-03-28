@@ -145,8 +145,9 @@ export function useWebMCP(setNodes: Setter<Node<NodeData>[]>, setEdges: Setter<E
 
     // Register WebMCP tools
     const ctx = navigator.modelContext;
+    const controller = new AbortController();
     if (ctx) {
-      graphTools.forEach((tool) => ctx.registerTool(tool));
+      graphTools.forEach((tool) => ctx.registerTool(tool, { signal: controller.signal }));
       log("WebMCP tools registered ✓", "ok");
     }
 
@@ -158,7 +159,8 @@ export function useWebMCP(setNodes: Setter<Node<NodeData>[]>, setEdges: Setter<E
       window.removeEventListener(GRAPH_EVENTS.CLEAR, onClear as EventListener);
       window.removeEventListener(GRAPH_EVENTS.AUTO_LAYOUT, onAutoLayout as EventListener);
 
-      if (ctx) graphTools.forEach((tool) => ctx.unregisterTool(tool.name));
+      if (ctx) graphTools.forEach((tool) => ctx.unregisterTool?.(tool.name));
+      controller.abort();
     };
   }, []);
 }
