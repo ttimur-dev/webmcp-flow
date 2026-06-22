@@ -143,10 +143,12 @@ export function useWebMCP(setNodes: Setter<Node<NodeData>[]>, setEdges: Setter<E
     window.addEventListener(GRAPH_EVENTS.CLEAR, onClear as EventListener);
     window.addEventListener(GRAPH_EVENTS.AUTO_LAYOUT, onAutoLayout as EventListener);
 
-    // Register WebMCP tools
-    const ctx = navigator.modelContext;
+    // Register WebMCP tools.
+    // Chrome 150+ exposes the API on `document.modelContext`; older builds used
+    // `navigator.modelContext`, kept here only as a fallback.
+    const ctx = document.modelContext ?? navigator.modelContext;
     const controller = new AbortController();
-    if (ctx) {
+    if (ctx && "registerTool" in ctx) {
       graphTools.forEach((tool) => ctx.registerTool(tool, { signal: controller.signal }));
       log("WebMCP tools registered ✓", "ok");
     }
@@ -159,7 +161,8 @@ export function useWebMCP(setNodes: Setter<Node<NodeData>[]>, setEdges: Setter<E
       window.removeEventListener(GRAPH_EVENTS.CLEAR, onClear as EventListener);
       window.removeEventListener(GRAPH_EVENTS.AUTO_LAYOUT, onAutoLayout as EventListener);
 
-      if (ctx) graphTools.forEach((tool) => ctx.unregisterTool?.(tool.name));
+      // `unregisterTool()` was removed from WebMCP — aborting the signal passed
+      // to `registerTool` is now the only way to unregister tools.
       controller.abort();
     };
   }, []);

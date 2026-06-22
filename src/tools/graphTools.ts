@@ -1,6 +1,6 @@
-import { dispatchAndWait, type McpResult } from "../utils/dispatchAndWait";
+import { dispatchAndWait } from "../utils/dispatchAndWait";
 import { NODE_TYPES } from "../constants/nodes";
-import type { NodeType } from "../types";
+import type { GraphState, NodeType } from "../types";
 import { getGraphState } from "../stores/graphState";
 
 export const GRAPH_EVENTS = {
@@ -19,18 +19,20 @@ function slugify(label: string): string {
     .replace(/[^a-z0-9-]/g, "");
 }
 
-function err(text: string): McpResult {
-  return { content: [{ type: "text", text }], isError: true };
+interface AddNodeResult {
+  id: string;
+  label: string;
+  nodeType: NodeType;
 }
 
-async function addNode({ label, nodeType, id }: Record<string, unknown>): Promise<McpResult> {
+async function addNode({ label, nodeType, id }: Record<string, unknown>): Promise<AddNodeResult | string> {
   const resolvedId = (id as string | undefined) ?? slugify(label as string);
   const resolvedType = NODE_TYPES.includes(nodeType as NodeType) ? (nodeType as NodeType) : "service";
-  if (getGraphState().nodes.find((n) => n.id === resolvedId)) return err(`Error: node "${resolvedId}" already exists.`);
-  return dispatchAndWait(
+  if (getGraphState().nodes.find((n) => n.id === resolvedId)) return `Error: node "${resolvedId}" already exists.`;
+  return dispatchAndWait<AddNodeResult>(
     GRAPH_EVENTS.ADD_NODE,
     { id: resolvedId, label, nodeType: resolvedType },
-    JSON.stringify({ id: resolvedId, label, nodeType: resolvedType }),
+    { id: resolvedId, label: label as string, nodeType: resolvedType },
   );
 }
 
@@ -76,14 +78,14 @@ export const addNodeTool = {
   execute: addNode,
 };
 
-async function addEdge({ source, target, label }: Record<string, unknown>): Promise<McpResult> {
+async function addEdge({ source, target, label }: Record<string, unknown>): Promise<string> {
   const { nodes, edges } = getGraphState();
   const src = source as string;
   const tgt = target as string;
-  if (!nodes.find((n) => n.id === src)) return err(`Error: source node "${src}" not found.`);
-  if (!nodes.find((n) => n.id === tgt)) return err(`Error: target node "${tgt}" not found.`);
+  if (!nodes.find((n) => n.id === src)) return `Error: source node "${src}" not found.`;
+  if (!nodes.find((n) => n.id === tgt)) return `Error: target node "${tgt}" not found.`;
   if (edges.find((e) => e.source === src && e.target === tgt))
-    return err(`Error: edge "${src} → ${tgt}" already exists.`);
+    return `Error: edge "${src} → ${tgt}" already exists.`;
   return dispatchAndWait(GRAPH_EVENTS.ADD_EDGE, { source: src, target: tgt, label }, `Edge created: ${src} → ${tgt}`);
 }
 
@@ -110,9 +112,9 @@ export const addEdgeTool = {
   execute: addEdge,
 };
 
-async function removeNode({ id }: Record<string, unknown>): Promise<McpResult> {
+async function removeNode({ id }: Record<string, unknown>): Promise<string> {
   const nodeId = id as string;
-  if (!getGraphState().nodes.find((n) => n.id === nodeId)) return err(`Error: node "${nodeId}" not found.`);
+  if (!getGraphState().nodes.find((n) => n.id === nodeId)) return `Error: node "${nodeId}" not found.`;
   return dispatchAndWait(GRAPH_EVENTS.REMOVE_NODE, { id: nodeId }, `Removed node "${nodeId}" and its edges.`);
 }
 
@@ -135,9 +137,9 @@ export const removeNodeTool = {
   execute: removeNode,
 };
 
-async function updateNode({ id, label, nodeType }: Record<string, unknown>): Promise<McpResult> {
+async function updateNode({ id, label, nodeType }: Record<string, unknown>): Promise<string> {
   const nodeId = id as string;
-  if (!getGraphState().nodes.find((n) => n.id === nodeId)) return err(`Error: node "${nodeId}" not found.`);
+  if (!getGraphState().nodes.find((n) => n.id === nodeId)) return `Error: node "${nodeId}" not found.`;
   return dispatchAndWait(GRAPH_EVENTS.UPDATE_NODE, { id: nodeId, label, nodeType }, `Updated node "${nodeId}".`);
 }
 
@@ -162,8 +164,8 @@ export const updateNodeTool = {
   execute: updateNode,
 };
 
-function getGraph(): McpResult {
-  return { content: [{ type: "text", text: JSON.stringify(getGraphState(), null, 2) }] };
+function getGraph(): GraphState {
+  return getGraphState();
 }
 
 export const getGraphTool = {
@@ -205,7 +207,7 @@ export const getGraphTool = {
   execute: getGraph,
 };
 
-export async function clearGraph(): Promise<McpResult> {
+export async function clearGraph(): Promise<string> {
   return dispatchAndWait(GRAPH_EVENTS.CLEAR, {}, "Graph cleared.");
 }
 
@@ -219,7 +221,7 @@ export const clearGraphTool = {
   execute: clearGraph,
 };
 
-export async function autoLayout(): Promise<McpResult> {
+export async function autoLayout(): Promise<string> {
   return dispatchAndWait(GRAPH_EVENTS.AUTO_LAYOUT, {}, "Layout applied.");
 }
 

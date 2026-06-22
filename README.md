@@ -8,7 +8,7 @@ An AI-controllable architecture diagram builder built on top of **WebMCP** — C
 
 ## WebMCP Tools
 
-The application exposes the following tools via `navigator.modelContext`:
+The application exposes the following tools via `document.modelContext`:
 
 - `add_node` — add a node with a label and type (`service`, `database`, `cache`, `queue`, `api`, `client`)
 - `add_edge` — connect two nodes with an optional protocol label
@@ -26,12 +26,17 @@ Each tool dispatches a `CustomEvent` to the React app and waits for a completion
 
 - **React + TypeScript** (Vite)
 - **[@xyflow/react](https://reactflow.dev/)** — node-based graph rendering
-- **WebMCP** — `navigator.modelContext` for tool registration
+- **WebMCP** — `document.modelContext` for tool registration
 
 ## Requirements
 
-- Chrome 146+ with `chrome://flags/#enable-webmcp-testing` enabled
+WebMCP is available as an [Origin Trial](https://developer.chrome.com/origintrials/#/register_trial/4163014905550602241) from Chrome 149 through 156. Use either:
+
+- **Chrome 149+** with a valid Origin Trial token, **or**
+- **Chrome 149+** with `chrome://flags/#enable-webmcp-testing` enabled (local development)
 - [Model Context Tool Inspector](https://chromewebstore.google.com/detail/model-context-tool-inspec/gbpdfapgefenggkahomfgkhfehlcenpd) extension
+
+> **Note:** The API moved from `navigator.modelContext` to `document.modelContext` in Chrome 150, and `unregisterTool()` was removed in favor of unregistering via `AbortSignal`. This app targets the current `document.modelContext` API and falls back to `navigator.modelContext` for feature detection on older builds. See the [WebMCP docs](https://developer.chrome.com/docs/ai/webmcp/imperative-api).
 
 ## Getting Started
 

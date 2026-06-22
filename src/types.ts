@@ -10,11 +10,17 @@ export interface NodeData extends Record<string, unknown> {
   nodeType: NodeType;
 }
 
+interface ModelContext {
+  registerTool: (tool: object, options?: { signal?: AbortSignal }) => void;
+}
+
 declare global {
+  // WebMCP moved from `navigator.modelContext` to `document.modelContext` in Chrome 150.
+  // `navigator.modelContext` is kept only for feature-detection fallback on older builds.
+  interface Document {
+    modelContext?: ModelContext;
+  }
   interface Navigator {
-    modelContext?: {
-      registerTool: (tool: object, options?: { signal?: AbortSignal }) => void;
-      unregisterTool?: (name: string) => void;
-    };
+    modelContext?: ModelContext;
   }
 }

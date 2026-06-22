@@ -1,14 +1,9 @@
-export interface McpResult {
-  content: Array<{ type: string; text: string }>;
-  isError?: boolean;
-}
-
-export function dispatchAndWait(
+export function dispatchAndWait<T>(
   eventName: string,
   detail: Record<string, unknown>,
-  successMessage: string,
+  result: T,
   timeoutMs = 5000,
-): Promise<McpResult> {
+): Promise<T> {
   return new Promise((resolve, reject) => {
     const requestId = Math.random().toString(36).slice(2);
     const completionEvent = `tool-completion-${requestId}`;
@@ -21,7 +16,7 @@ export function dispatchAndWait(
     const onComplete = () => {
       clearTimeout(timer);
       window.removeEventListener(completionEvent, onComplete);
-      resolve({ content: [{ type: "text", text: successMessage }] });
+      resolve(result);
     };
 
     window.addEventListener(completionEvent, onComplete);

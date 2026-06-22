@@ -30,7 +30,7 @@ export default function App() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<NodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [logs, setLogs] = useState<LogEntry[]>([{ ts: "init", msg: "Waiting for agent activity...", type: "" }]);
-  const [webMCPAvailable] = useState(() => !!navigator.modelContext);
+  const [webMCPAvailable] = useState(() => !!(document.modelContext ?? navigator.modelContext));
   const logRef = useRef<HTMLDivElement>(null);
 
   const log = useCallback((msg: string, type: LogEntry["type"] = "") => {
